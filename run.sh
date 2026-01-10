@@ -13,6 +13,10 @@ NC='\033[0m'
 TARGET="broken.py"
 SOURCE="files/broken.py"
 
+if [[ -f "$TARGET" ]]; then
+  rm "$TARGET"
+fi
+
 if [[ ! -f "$SOURCE" ]]; then
   echo -e "${RED}ERROR: $SOURCE not found!${NC}"
   exit 1
