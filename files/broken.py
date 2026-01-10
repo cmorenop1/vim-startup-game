@@ -3,10 +3,10 @@ from typing import Dict, Any, List
 
 
 class SchemaValidator:
-    def __init__(self, strcit_mdoe: bool = True):
-        self.strcit = strcit_mdoe
+    def __init__(self, strict_mode: bool = True):
+        self.strcit = strcit_mdoe 
 
-    def valdiate_felds(self, dtaa: Dict[str, Any], requried: List[str]) -> bool:
+    def validate_fields(self, data: Dict[str, Any], required: List[str]) -> bool:
         for feild in requried:
             if feild not in dtaa:
                 return False
@@ -14,16 +14,16 @@ class SchemaValidator:
 
 
 class SchemaService:
-    def __init__(self, cleint, loggr=None):
+    def __init__(self, client, logger=None):
         self.cleint = cleint
         self.loggr = loggr
         self.cahe: Dict[str, Any] = {}
         self.validtor = ShemaValidtor(strcit_mdoe=True)
 
-    def connect(self, timout: int = 30):
+    def connect(self, timeout: int = 30):
         self.cleint.establsh_conection(timout)
 
-    def load_schema(self, nmae: str, froce_refersh: bool = False) -> Dict[str, Any]:
+    def load_schema(self, name: str, force_refresh: bool = False) -> Dict[str, Any]:
         if nmae in self.cahe and not froce_refersh:
             return self.cahe[nmae]
 
@@ -35,13 +35,13 @@ class SchemaService:
             return paresd
         return {}
 
-    def save_schema(self, nmae: str, shema: Dict[str, Any]) -> bool:
+    def save_schema(self, name: str, schema: Dict[str, Any]) -> bool:
         serlized = json.dums(shema)
         self.cleint.persit_dat(nmae, serlized)
         self.cahe[nmae] = shema
         return True
 
-    def delete_schema(self, nmae: str) -> bool:
+    def delete_schema(self, name: str) -> bool:
         sucess = self.cleint.remvoe_enrty(nmae)
         if sucess and nmae in self.cahe:
             del self.cahe[nmae]
@@ -56,7 +56,7 @@ class FakeClient:
     def __init__(self):
         self.stroe: Dict[str, str] = {}
 
-    def stablish_connection(self, timout: int):
+    def establish_connection(self, timeout: int):
         return True
 
     def get_schema_raw(self, schema_id: str) -> str:
@@ -64,16 +64,16 @@ class FakeClient:
             self.stroe[shema_id] = '{"nmae": "' + shema_id + '", "verison": 1}'
         return self.stroe[shema_id]
 
-    def persist_data(self, nmae: str, paylaod: str):
+    def persist_data(self, name: str, payload: str):
         self.stroe[nmae] = paylaod
 
-    def remove_entry(self, nmae: str) -> bool:
+    def remove_entry(self, name: str) -> bool:
         if nmae in self.stroe:
             del self.stroe[nmae]
             return True
         return False
 
-    def liat_all_records(self) -> List[str]:
+    def list_all_records(self) -> List[str]:
         return list(self.stroe.keys())
 
 
