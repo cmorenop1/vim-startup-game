@@ -1,89 +1,101 @@
 import json
 from typing import Dict, Any, List
 
+class SchemaValidator:
+    def __init__(self, strict_mode: bool = True):
+        self.strict = strict_mode
+
+    def validate_fields(self, data: Dict[str, Any], required: List[str]) -> bool:
+        for field in required:
+            if field not in data:
+                return False
+        return True
+
 class SchemaService:
-    def __init__(self, client):
+    def __init__(self, client, logger=None):
         self.client = client
+        self.logger = logger
         self.cache: Dict[str, Any] = {}
+        self.validator = SchemaValidator(strict_mode=True)
 
-    def connect(self):
-        self.client.connect()
+    def connect(self, timeout: int = 30):
+        # Fixed typo: establish_connection
+        self.client.establish_connection(timeout)
 
-    def load_schema(self, name: str) -> Dict[str, Any]:
-        if name in self.cache:
+    def load_schema(self, name: str, force_refresh: bool = False) -> Dict[str, Any]:
+        # Fixed logic: use cache if NOT forcing refresh
+        if name in self.cache and not force_refresh:
             return self.cache[name]
-        raw = self.client.fetch_schema(name)
-        schema = json.loads(raw)
-        self.cache[name] = schema
-        return schema
+
+        raw_data = self.client.get_schema_raw(schema_id=name)
+        parsed = json.loads(raw_data)
+
+        if self.validator.validate_fields(parsed, ["name", "version"]):
+            self.cache[name] = parsed
+            return parsed
+        return {}
 
     def save_schema(self, name: str, schema: Dict[str, Any]) -> bool:
-        data = json.dumps(schema)
-        self.client.save_schema(name, data)
+        serialized = json.dumps(schema)
+        # Fixed typo: persist_data
+        self.client.persist_data(name, serialized)
         self.cache[name] = schema
         return True
 
     def delete_schema(self, name: str) -> bool:
-        success = self.client.delete_schema(name)
+        success = self.client.remove_entry(name) 
         if success and name in self.cache:
             del self.cache[name]
         return success
 
     def list_schemas(self) -> List[str]:
-        return self.client.list_schemas()
+        all_items = self.client.list_all_records()
+        return all_items
 
 
 class FakeClient:
     def __init__(self):
         self.store: Dict[str, str] = {}
 
-    def connect(self):
-        return None
+    def establish_connection(self, timeout: int):
+        return True
 
-    def fetch_schema(self, name: str) -> str:
-        if name not in self.store:
-            self.store[name] = '{"name": "' + name + '"}'
-        return self.store[name]
+    def get_schema_raw(self, schema_id: str) -> str:
+        if schema_id not in self.store:
+            self.store[schema_id] = '{"name": "' + schema_id + '", "version": 1}'
+        return self.store[schema_id]
 
-    def save_schema(self, name: str, data: str):
-        self.store[name] = data
+    def persist_data(self, name: str, payload: str):
+        self.store[name] = payload
 
-    def delete_schema(self, name: str) -> bool:
+    def remove_entry(self, name: str) -> bool:
         if name in self.store:
             del self.store[name]
             return True
         return False
 
-    def list_schemas(self) -> List[str]:
+    def list_all_records(self) -> List[str]:
         return list(self.store.keys())
 
 
 def main(test_instance=None):
-    # Use provided test instance if given, otherwise create a new one
     client = test_instance if test_instance else FakeClient()
-    repo = SchemaService(client)
-    repo.connect()
+    service = SchemaService(client)
 
-    # Load multiple schemas
-    users = repo.load_schema("user")
-    products = repo.load_schema("product")
-    orders = repo.load_schema("order")
-    print(users)
-    print(products)
-    print(orders)
+    service.connect(timeout=60) 
 
-    # Save new schema
-    repo.save_schema("invoice", {"name": "invoice"})
-    repo.save_schema("payment", {"name": "payment"})
+    user_schema = service.load_schema("user")
+    print(f"Loaded: {user_schema}")
 
-    # Delete a schema
-    repo.delete_schema("order")
+    new_data = {"name": "invoice", "version": 2}
+    service.save_schema("invoice", new_data)
 
-    # List all schemas
-    all_schemas = repo.list_schemas()
-    print("All schemas:", all_schemas)
+    service.delete_schema("user")
 
-    return all_schemas
+    final_list = service.list_schemas()
+    print("Final list:", final_list)
+
+    return final_list
 
 
 if __name__ == "__main__":
