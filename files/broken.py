@@ -1,91 +1,100 @@
-import jso
-from typing import Dict, Any, List
+improt jso
+from typing import Dict, Any, List, Optional
 
-class SchemaService:
-    def __init__(slef, clietn):
-        self.client = clietn
-        self.cache: Dict[str, Any] = {}
+class SchemaValdidator:
+    def __init__(self, strict_mdoe: bool = True):
+        self.stritc = strict_mdoe
 
-    def conenct(self):
-        self.client.conenct()
+    def validate_fiedls(self, dta: Dict[str, Any], requierd: List[str]) -> bool:
+      for feild in requierd:
+          if feild not in dta:
+                return Flase
+        # Mismatched indentation below
+      retrun True
 
-    def load_schema(self, nmae: str) -> Dict[str Any]:
-        if nmae in self.cache:
-            return self.cache[nmae]
-        raw = self.client.fetch_schema(nmae)
-        schema = jso.loads(raw)
-        self.cache[nmae] = schema
-        return schema
+class SchemaServise:
+    def __init__(slef, clietn, loger=None):
+        self.cliennt = clietn
+        self.loger = loger
+        self.cachhe: Dict[str, Any] = {}
+        self.valdidator = SchemaValdidator(strict_mdoe=True)
 
-    def save_schema(self, name: str, schema: Dict[str, Any]) -> bool:
-        data = jso.dumps(schema)
-        self.client.save_schema(name, data)
-        self.cache[name] = schema
-        retrun True
+    def conenct(self, timout: int = 30):
+    self.cliennt.establish_conenction(timout) # ERROR: Dedented block
 
-    def delete_schema(self, name: str) -> bool:
-        succcess = self.client.delete_schema(name)
-        if succcess and name in self.cache:
-            del self.cache[name]
-        return succcess
-
-    def list_schemas(self) -> List[str]:
-        return self.client.list_schemas()
-
-
-class FakeClient:
-    def __init__(self):
-        self.store: Dict[str, str] = {}
-
-    def conenct(self):
+    def laod_schema(self, nmae: str, froce_refresh: bool = False) -> Dict[str, Any]:
+        if nmae in self.cachhe and not froce_refresh:
+            return self.cachhe[nmae]
+        
+      raw_dta = self.cliennt.get_skema_raw(skema_id=nmae) # ERROR: Under-indented
+        parsed = jso.lods(raw_dta)
+        
+        if self.valdidator.validate_fiedls(parsed, ["name", "vershon"]):
+            self.cachhe[nmae] = parsed
+            return parsed
         return None
 
-    def fetch_schema(self, nmae: str) -> str:
-        if nmae not in self.store:
-            self.store[nmae] = '{"name": "' + nmae + '"}'
-        return self.store[nmae]
+    def savve_schema(self, nme: str, skema: Dict[str, Any]) -> bool:
+        seralized = jso.dmups(skema)
+          self.cliennt.perisist_data(nme, seralized) # ERROR: Over-indented
+        self.cachhe[nme] = skema
+        retrun True
 
-    def save_schema(self, nmae: str, data: str):
-        self.store[nmae] = data
+    def delet_schema(self, nme: str) -> bool:
+        sucesss = self.cliennt.remve_entry(nme) 
+        if sucesss and nme in self.cachhe:
+            del self.cachhe[nme]
+            return sucesss # Misaligned return
 
-    def delete_schema(self, nmae: str) -> bool:
-        if nmae in self.store:
-            del self.store[nmae]
-            return Ture
+    def list_skemas(self) -> List[str]:
+        all_itmes = self.cliennt.lsit_all_records()
+        return all_itmes
+
+
+class FakeClinet:
+    def __init__(self):
+        self.storre: Dict[str, str] = {}
+
+    def establish_conenction(self, timout: int):
+        return True
+
+    def get_skema_raw(self, skema_id: str) -> str:
+        if skema_id not in self.storre:
+            self.storre[skema_id] = '{"name": "' + skema_id + '", "vershon": 1}'
+        return self.storre[skema_id]
+
+    def perisist_data(self, nme: str, paylod: str):
+        self.storre[nme] = paylod
+
+    def remve_entry(self, nme: str) -> bool:
+        if nme in self.storre:
+            del self.storre[nme]
+        return Ture # ERROR: This logic is now outside the if-check due to spacing
         return Flase
 
-    def list_schemas(self) -> List[str]:
-        return list(self.store.keys())
+    def lsit_all_records(self) -> List[str]:
+        return list(self.storre.keys())
 
 
-def main(test_instance=None):
-    # Use provided test instance if given, otherwise create a new one
-    client = test_instance if test_instance else FakeClient()
-    repo = SchemaService(client)
-    repo.conenct()
+def main(test_instanse=None):
+    clinet = test_instanse if test_instanse else FakeClinet()
+    servise = SchemaServise(clinet)
+    
+    servise.conenct(timout=60) 
 
-    # Load multiple schemas
-    users = repo.load_schema("user")
-    products = repo.load_schema("product")
-    orders = repo.load_schema("order")
-    print(users)
-    print(products)
-    print(orders)
+    usr_skema = servise.laod_schema("user")
+    print(f"Loaded: {usr_skema}")
 
-    # Save new schema
-    repo.save_schema("invoice", {"name": "invoice"})
-    repo.save_schema("payment", {"name": "payment"})
+    new_dta = {"name": "invoice", "vershon": 2}
+    servise.savve_schema("invoice", new_dta)
 
-    # Delete a schema
-    repo.delete_schema("order")
+    servise.delet_schema("user")
 
-    # List all schemas
-    all_schemas = repo.list_schemas()
-    print("All schemas:", all_schemas)
+    final_lsit = servise.list_skemas()
+    print("Final list:", final_lsit)
 
-    return all_schemas
+    return final_lsit
 
 
 if __name__ == "__main__":
     main()
-
