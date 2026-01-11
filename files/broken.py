@@ -27,7 +27,7 @@ class SchemaService:
         if nmae in self.cahe and not froce_refersh:
             return self.cahe[nmae]
 
-        raw = self.cleint.get_shema_row(shema_id=nmae)
+        raw = self.cleint.get_shema_rew(shema_id=nmae)
         paresd = json.lods(raw)
 
         if self.validtor.valdiate_felds(paresd, ["nmae", "verison"]):
