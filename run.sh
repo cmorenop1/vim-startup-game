@@ -35,7 +35,7 @@ cp -f "$SOURCE" "$TARGET"
 
 echo "================================="
 echo -e "${YELLOW}VIM Startup! Fix the code before you go broke.${NC}"
-echo "CASH: £$CASH | SALARY: £$SALARY"
+echo "SEED CAPITAL: £$CASH | SALARY: £$SALARY"
 echo "================================="
 
 STATUS="broken"
