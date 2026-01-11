@@ -43,7 +43,7 @@ START_TIME=$(date +%s)
 
 # --- Game Loop ---
 while true; do
-  # Determine color based on remaining cash
+
   if ((CASH < (INITIAL_CASH / 4))); then
     COLOR=$RED
   else
@@ -53,16 +53,15 @@ while true; do
   # Update UI
   printf "\rSTATUS: %-7s | CASH: ${COLOR}£%6d${NC} " "$STATUS" "$CASH"
 
-  # Try to run broken.py
   if python3 "$TARGET" >/dev/null 2>&1; then
     STATUS="fixed"
-    # Final UI update to show success state
     printf "\rSTATUS: %-7s | CASH: ${GREEN}£%6d${NC} " "$STATUS" "$CASH"
     break
   fi
 
   # Subtract salary AFTER the check to give the player a fair final second
   CASH=$((CASH - SALARY))
+  SALARY=$((SALARY + 10))
 
   # Check lose condition
   if ((CASH <= 0)); then
